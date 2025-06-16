@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Urban Frame</title>
+</head>
+
+<body>
+  <div class="camera-container">
+    <h2>Captura con Fondo Personalizado</h2>
+
+    <div id="loading-indicator" class="loading-indicator">
+      Cargando modelo de segmentación...
+    </div>
+
+    <div class="button-container">
+      <button id="start-camera-button">Abrir Cámara</button>
+      <button id="capture-button" disabled>Tomar Foto</button>
+    </div>
+
+    <div class="controls">
+      <label for="background-selector">Seleccionar fondo:</label>
+      <select id="background-selector" disabled>
+        <option value="background1.jpg">Playa</option>
+        <option value="background2.jpg">Montaña</option>
+        <option value="background3.jpg">Bosque</option>
+        <option value="background4.jpg">Ciudad</option>
+        <option value="background5.jpg">Espacio</option>
+      </select>
+    </div>
+
+    <!-- Elemento video para capturar la cámara (estará oculto) -->
+    <video id="camera-video" class="video-feed" autoplay playsinline muted></video>
+
+    <!-- Canvas para mostrar el resultado procesado -->
+    <canvas id="output-canvas"></canvas>
+
+    <div class="capture-result">
+      <h3>Imagen Capturada:</h3>
+      <img id="captured-image" alt="La foto capturada aparecerá aquí">
+    </div>
+
+    <!-- Canvas para procesamiento (oculto) -->
+    <canvas id="capture-canvas"></canvas>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
