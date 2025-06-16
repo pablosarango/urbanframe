@@ -5,47 +5,135 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Urban Frame</title>
-  <link rel="stylesheet" href="/src/styles.css" />
-  <script type="module" crossorigin src="/urbanframe/assets/main-DoferEK5.js"></script>
+  <script type="module" crossorigin src="/urbanframe/assets/main-D1V7WnoV.js"></script>
+  <link rel="stylesheet" crossorigin href="/urbanframe/assets/main-D1NTxTNW.css">
 </head>
 
 <body>
-  <div class="camera-container">
-    <h2>Urban Frame</h2>
 
-    <div id="loading-indicator" class="loading-indicator">
-      Cargando modelo de segmentación...
-    </div>
-
-    <div class="button-container">
+  <div class="app-container">
+    <div class="camera-section">
       <button id="start-camera-button" class="btn-action">Abrir Cámara</button>
-      <button id="capture-button" class="btn-action" disabled>Tomar Foto</button>
+      <button id="capture-button" disabled class="btn-action">Tomar Foto</button>
+
+      <!-- Canvas para mostrar el video procesado -->
+      <canvas id="output-canvas" width="640" height="480"></canvas>
+
+      <div id="photo-timer" class="photo-timer">
+        <div class="timer-circle">
+          <span class="timer-count">3</span>
+        </div>
+      </div>
+
+      <!-- Selector de fondos con miniaturas -->
+      <div id="background-selector" class="background-selector">
+        <h3>Selecciona un fondo</h3>
+        <div class="thumbnails-container">
+          <!-- Las miniaturas se generarán dinámicamente -->
+        </div>
+      </div>
     </div>
 
-    <!-- <div class="controls">
-      <label for="background-selector">Seleccionar fondo:</label>
-      <select id="background-selector" disabled>
-        <option value="background1.jpg">Playa</option>
-        <option value="background2.jpg">Montaña</option>
-        <option value="background3.jpg">Bosque</option>
-        <option value="background4.jpg">Ciudad</option>
-        <option value="background5.jpg">Espacio</option>
-      </select>
-    </div> -->
+    <div class="result-section">
+      <!-- Imagen capturada -->
+      <img id="captured-image" alt="Imagen capturada" />
 
-    <!-- Elemento video para capturar la cámara (estará oculto) -->
-    <video id="camera-video" class="video-feed" autoplay playsinline muted></video>
+      <!-- Botón para compartir (aparece después de tomar la foto) -->
+      <button id="share-photo-button" class="btn-action share-button">Compartir Foto</button>
 
-    <!-- Canvas para mostrar el resultado procesado -->
-    <canvas id="output-canvas"></canvas>
+      <!-- Modal de formulario -->
+      <div id="validation-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-modal">&times;</span>
+          <h2>Completa tus datos para compartir</h2>
 
-    <div class="capture-result">
-      <h3>Imagen Capturada:</h3>
-      <img id="captured-image" alt="La foto capturada aparecerá aquí">
+          <form id="validation-form">
+            <div class="form-group">
+              <label class="checkbox-container">
+                <input type="checkbox" id="adult-check" required>
+                <span class="checkmark"></span>
+                Confirmo que soy mayor de edad
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-container">
+                <input type="checkbox" id="privacy-check" required>
+                <span class="checkmark"></span>
+                Acepto la <a href="#" target="_blank">política de privacidad</a>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label for="email-input">Correo electrónico:</label>
+              <input type="email" id="email-input" required placeholder="correo@ejemplo.com">
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="send-otp-button" class="btn-action">Enviar código OTP</button>
+            </div>
+
+            <div id="otp-section" class="form-group hidden">
+              <label for="otp-input">Ingresa el código OTP enviado a tu correo:</label>
+              <input type="text" id="otp-input" placeholder="Código de verificación">
+
+              <div class="form-actions">
+                <button type="button" id="validate-otp-button" class="btn-action">Validar OTP</button>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="submit-form-button" class="btn-action" disabled>Enviar</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
-    <!-- Canvas para procesamiento (oculto) -->
-    <canvas id="capture-canvas"></canvas>
+    <!-- Mensaje de celebración con animación -->
+    <div id="success-animation" class="celebration-container">
+      <div class="celebration-content">
+        <div class="confetti-container">
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+        </div>
+        <div class="celebration-message">
+          <h2>¡Foto enviada!</h2>
+          <p>Gracias por participar</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video oculto (usado para capturar la cámara) -->
+    <video id="camera-video" autoplay playsinline muted></video>
   </div>
 
 </body>
