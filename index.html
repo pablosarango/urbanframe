@@ -5,23 +5,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Urban Frame</title>
-  <script type="module" crossorigin src="/urbanframe/assets/main-tqeaMLV8.js"></script>
+  <link rel="stylesheet" href="/src/styles.css" />
+  <script type="module" crossorigin src="/urbanframe/assets/main-DoferEK5.js"></script>
 </head>
 
 <body>
   <div class="camera-container">
-    <h2>Captura con Fondo Personalizado</h2>
+    <h2>Urban Frame</h2>
 
     <div id="loading-indicator" class="loading-indicator">
       Cargando modelo de segmentación...
     </div>
 
     <div class="button-container">
-      <button id="start-camera-button">Abrir Cámara</button>
-      <button id="capture-button" disabled>Tomar Foto</button>
+      <button id="start-camera-button" class="btn-action">Abrir Cámara</button>
+      <button id="capture-button" class="btn-action" disabled>Tomar Foto</button>
     </div>
 
-    <div class="controls">
+    <!-- <div class="controls">
       <label for="background-selector">Seleccionar fondo:</label>
       <select id="background-selector" disabled>
         <option value="background1.jpg">Playa</option>
@@ -30,7 +31,7 @@
         <option value="background4.jpg">Ciudad</option>
         <option value="background5.jpg">Espacio</option>
       </select>
-    </div>
+    </div> -->
 
     <!-- Elemento video para capturar la cámara (estará oculto) -->
     <video id="camera-video" class="video-feed" autoplay playsinline muted></video>
