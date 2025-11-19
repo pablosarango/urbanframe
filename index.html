@@ -5,45 +5,175 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Urban Frame</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body>
-  <div class="camera-container">
-    <h2>Captura con Fondo Personalizado</h2>
+<body data-inactivity-redirect="https://turismoastorga.es/?activar_totem=1">
 
-    <div id="loading-indicator" class="loading-indicator">
-      Cargando modelo de segmentación...
-    </div>
-
-    <div class="button-container">
-      <button id="start-camera-button">Abrir Cámara</button>
-      <button id="capture-button" disabled>Tomar Foto</button>
-    </div>
-
-    <div class="controls">
-      <label for="background-selector">Seleccionar fondo:</label>
-      <select id="background-selector" disabled>
-        <option value="background1.jpg">Playa</option>
-        <option value="background2.jpg">Montaña</option>
-        <option value="background3.jpg">Bosque</option>
-        <option value="background4.jpg">Ciudad</option>
-        <option value="background5.jpg">Espacio</option>
+  <div class="app-container">
+    <!-- Language Selector -->
+    <!-- <div class="language-selector">
+      <select id="language-select">
+        <option value="es">🇪🇸 Español</option>
+        <option value="en">🇺🇸 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="ko">🇰🇷 한국어</option>
       </select>
+    </div> -->
+
+    <div class="camera-section">
+      <button id="start-camera-button" class="btn-action">Abrir Cámara</button>
+      <button id="capture-button" disabled class="btn-action">Tomar Foto</button>
+
+      <!-- Canvas para mostrar el video procesado -->
+      <canvas id="output-canvas" width="640" height="480"></canvas>
+
+      <div id="photo-timer" class="photo-timer">
+        <div class="timer-circle">
+          <span class="timer-count">3</span>
+        </div>
+      </div>
+
+      <!-- Selector de fondos con miniaturas -->
+      <!-- <div id="background-selector" class="background-selector">
+        <h3>Selecciona un fondo</h3>
+        <div class="thumbnails-container">
+        </div>
+      </div> -->
     </div>
 
-    <!-- Elemento video para capturar la cámara (estará oculto) -->
-    <video id="camera-video" class="video-feed" autoplay playsinline muted></video>
-
-    <!-- Canvas para mostrar el resultado procesado -->
-    <canvas id="output-canvas"></canvas>
-
-    <div class="capture-result">
-      <h3>Imagen Capturada:</h3>
-      <img id="captured-image" alt="La foto capturada aparecerá aquí">
+    <div class="result-section">
+      <!-- Imagen capturada -->
+      <img id="captured-image" alt="Imagen capturada" />
+      <div class="share-container">
+        <button id="share-photo-button" class="btn-action share-button">Compartir Foto</button>
+        <div id="share-timer-container" class="timer-container">
+          <div id="share-timer-bar" class="timer-bar"></div>
+          <div id="share-timer-text" class="timer-text">20</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Canvas para procesamiento (oculto) -->
-    <canvas id="capture-canvas"></canvas>
+    <!-- Modal de formulario -->
+    <div id="validation-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="modal-title">Completa tus datos para compartir</h2>
+
+        <div id="modal-info" style="margin-bottom: 20px;">
+          Para compartir la foto es necesario que confirmes las 2 pestañas siguientes y pongas tu email para mandarte un codigo de seguridad.
+        </div>
+
+        <form id="validation-form">
+          <div class="form-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="adult-check" required>
+              <span class="checkmark"></span>
+              <span id="adult-check-label">Confirmo que soy mayor de edad</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="privacy-check" required>
+              <span class="checkmark"></span>
+              <span id="privacy-check-label">He leído y comprendo la</span> <a href="#" id="privacy-policy-link" target="_blank">política de protección de datos</a>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="email-input" id="email-label">Correo electrónico:</label>
+            <input type="email" id="email-input" required placeholder="correo@ejemplo.com">
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="send-otp-button" class="btn-action">Enviar código OTP</button>
+          </div>
+
+          <div id="otp-section" class="form-group hidden">
+            <label for="otp-input" id="otp-label">Ingresa el código OTP enviado a tu correo:</label>
+            <input type="text" id="otp-input" placeholder="Código de verificación">
+
+            <div id="otp-timer" class="otp-timer"></div>
+
+            <div class="form-actions">
+              <button type="button" id="validate-otp-button" class="btn-action">Validar OTP</button>
+            </div>
+          </div>
+
+          <div id="additional-email-section" class="form-group hidden">
+            <label for="additional-email-input" id="additional-email-label">Ingresa tu mail para enviarte la foto.</label>
+            <div class="email-input-container">
+              <input type="email" id="additional-email-input" placeholder="correo.adicional@ejemplo.com">
+              <div class="form-helper-text" id="email-helper-text">La foto se enviará a este correo</div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="submit-form-button" class="btn-action" disabled>Enviar</button>
+          </div>
+
+          <div id="upload-progress-container" class="upload-progress-container hidden">
+            <div class="upload-progress-bar">
+              <div id="upload-progress" class="upload-progress"></div>
+            </div>
+            <div id="upload-status" class="upload-status">Preparando envío...</div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Botón para compartir (aparece después de tomar la foto) -->
+    <!-- <button id="share-photo-button" class="btn-action share-button">Compartir Foto</button>
+    <div id="share-timer-container" class="timer-container">
+      <div id="share-timer-bar" class="timer-bar"></div>
+      <div id="share-timer-text" class="timer-text">20</div>
+    </div> -->
+
+    <!-- Mensaje de celebración con animación -->
+    <div id="success-animation" class="celebration-container">        <div class="celebration-content">
+          <div class="confetti-container">
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+          </div>
+          <div class="celebration-message">
+            <h2 id="success-title">¡Foto enviada!</h2>
+            <p id="success-message">Gracias por participar</p>
+          </div>
+        </div>
+    </div>
+
+    <!-- Video oculto (usado para capturar la cámara) -->
+    <video id="camera-video" autoplay playsinline muted></video>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

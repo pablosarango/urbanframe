@@ -1,126 +1,112 @@
 import * as bodyPix from '@tensorflow-models/body-pix';
 import '@tensorflow/tfjs';
 
-/**
- * Utilidad para acceso a la cámara y captura de imágenes con cambio de fondo
- */
 export class CameraCapture {
-    private videoElement: HTMLVideoElement | null = null;
-    private canvasElement: HTMLCanvasElement | null = null;
-    private outputCanvas: HTMLCanvasElement | null = null;
+    private videoElement: HTMLVideoElement;
+    private outputCanvas: HTMLCanvasElement;
     private stream: MediaStream | null = null;
     private bodyPixModel: bodyPix.BodyPix | null = null;
     private backgroundImage: HTMLImageElement | null = null;
     private animationFrame: number | null = null;
     private isProcessingActive: boolean = false;
 
-    /**
-     * Inicializa el acceso a la cámara
-     * @param videoElementId ID del elemento video para mostrar la transmisión
-     * @param canvasElementId ID del elemento canvas para capturar la imagen
-     * @param outputCanvasId ID del elemento canvas donde se mostrará el resultado procesado
-     */
-    public async initialize(
-        videoElementId: string,
-        canvasElementId: string,
-        outputCanvasId: string
-    ): Promise<boolean> {
-        this.videoElement = document.getElementById(videoElementId) as HTMLVideoElement;
-        this.canvasElement = document.getElementById(canvasElementId) as HTMLCanvasElement;
-        this.outputCanvas = document.getElementById(outputCanvasId) as HTMLCanvasElement;
+    constructor(videoId: string, canvasId: string) {
+        this.videoElement = document.getElementById(videoId) as HTMLVideoElement;
+        this.outputCanvas = document.getElementById(canvasId) as HTMLCanvasElement;
 
-        if (!this.videoElement || !this.canvasElement || !this.outputCanvas) {
-            console.error('No se encontraron los elementos necesarios');
-            return false;
+        if (!this.videoElement || !this.outputCanvas) {
+            console.error("No se encontraron los elementos de video o canvas");
         }
+    }
 
+    public async initialize(): Promise<boolean> {
         try {
-            // Cargar el modelo de BodyPix
-            console.log('Cargando modelo BodyPix...');
-            this.bodyPixModel = await bodyPix.load({
-                architecture: 'MobileNetV1',
-                outputStride: 16,
-                multiplier: 0.75,
-                quantBytes: 2
-            });
-            console.log('Modelo BodyPix cargado');
+            // console.log("Cargando modelo BodyPix...");
+            // this.bodyPixModel = await bodyPix.load({
+            //     architecture: 'MobileNetV1',
+            //     outputStride: 16,
+            //     multiplier: 0.75,
+            //     quantBytes: 2
+            // });
+            // console.log("Modelo BodyPix cargado correctamente");
 
-            // Solicitar acceso a la cámara del usuario
+            console.log("Solicitando acceso a cámara...");
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    facingMode: 'user',
                     width: { ideal: 640 },
                     height: { ideal: 480 }
-                },
-                audio: false
+                }
             });
+            console.log("Acceso a cámara concedido");
 
-            // Conectar el stream de la cámara al elemento video
             this.videoElement.srcObject = this.stream;
             await this.videoElement.play();
 
-            // Configurar tamaño del canvas de salida
+            // Configurar tamaño del canvas
             this.outputCanvas.width = this.videoElement.videoWidth;
             this.outputCanvas.height = this.videoElement.videoHeight;
 
+            console.log("Video inicializado:",
+                this.videoElement.videoWidth, "x",
+                this.videoElement.videoHeight);
+
             return true;
-        } catch (error) {
-            console.error('Error al inicializar la cámara o modelo:', error);
+        } catch (e) {
+            console.error("Error al inicializar:", e);
             return false;
         }
     }
 
-    /**
-     * Establece la imagen de fondo para reemplazar el fondo real
-     * @param imageUrl URL de la imagen a usar como fondo
-     */
     public async setBackground(imageUrl: string): Promise<void> {
-        return new Promise((resolve, reject) => {
+        console.log("Cargando fondo:", imageUrl);
+
+        return new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
+                console.log("Fondo cargado correctamente");
                 this.backgroundImage = img;
                 resolve();
             };
-            img.onerror = () => {
-                reject(new Error(`Error al cargar la imagen de fondo: ${imageUrl}`));
+            img.onerror = (err) => {
+                console.warn("Error al cargar el fondo:", err);
+                this.backgroundImage = null;
+                resolve(); // Resolvemos igual para no romper el flujo
             };
             img.src = imageUrl;
         });
     }
 
-    /**
-     * Inicia el procesamiento en tiempo real para el cambio de fondo
-     */
     public startRealTimeProcessing(): void {
-        if (!this.bodyPixModel || !this.videoElement || !this.outputCanvas) {
-            console.error('No se ha inicializado correctamente');
-            return;
-        }
-
+        console.log("Iniciando procesamiento en tiempo real");
         this.isProcessingActive = true;
         this.processFrame();
     }
 
-    /**
-     * Detiene el procesamiento en tiempo real
-     */
     public stopRealTimeProcessing(): void {
+        console.log("Deteniendo procesamiento");
         this.isProcessingActive = false;
-        if (this.animationFrame !== null) {
+        if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
             this.animationFrame = null;
         }
     }
 
-    /**
-   * Procesa un frame del video aplicando la segmentación y el cambio de fondo
-   */
-    private async processFrame(): Promise<void> {
-        if (!this.isProcessingActive || !this.videoElement || !this.bodyPixModel || !this.outputCanvas) {
-            return;
-        }
+    private async processFrame() {
+        if (!this.isProcessingActive) return;
+        if (!this.videoElement || !this.outputCanvas) return;
 
         try {
+            // Dibuja el video primero en el canvas (como fallback)
+            const ctx = this.outputCanvas.getContext('2d');
+            if (!ctx) return;
+
+            // Si el modelo no está listo o no hay fondo, muestra solo el video
+            if (!this.bodyPixModel || !this.backgroundImage) {
+                ctx.drawImage(this.videoElement, 0, 0);
+                this.animationFrame = requestAnimationFrame(() => this.processFrame());
+                return;
+            }
+
             // Realizar segmentación de la persona
             const segmentation = await this.bodyPixModel.segmentPerson(this.videoElement, {
                 flipHorizontal: false,
@@ -128,90 +114,75 @@ export class CameraCapture {
                 segmentationThreshold: 0.7
             });
 
-            const context = this.outputCanvas.getContext('2d');
-            if (!context) return;
-
-            // Dibujar el fondo
-            if (this.backgroundImage) {
-                context.drawImage(
-                    this.backgroundImage,
-                    0, 0,
-                    this.outputCanvas.width,
-                    this.outputCanvas.height
-                );
-            } else {
-                // Si no hay fondo, usar un color sólido
-                context.fillStyle = '#C0C0C0';
-                context.fillRect(0, 0, this.outputCanvas.width, this.outputCanvas.height);
-            }
-
-            // Crear una máscara de segmentación
-            const mask = bodyPix.toMask(
-                segmentation,
-                { r: 0, g: 0, b: 0, a: 0 },  // Color para persona (transparente)
-                { r: 0, g: 0, b: 0, a: 255 } // Color para fondo (opaco negro)
+            // Dibuja el fondo
+            ctx.drawImage(
+                this.backgroundImage,
+                0, 0,
+                this.outputCanvas.width,
+                this.outputCanvas.height
             );
 
-            // Crear un canvas temporal para la máscara
+            // Crea un canvas temporal para obtener los píxeles del video
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = this.outputCanvas.width;
             tempCanvas.height = this.outputCanvas.height;
-            const tempContext = tempCanvas.getContext('2d');
+            const tempCtx = tempCanvas.getContext('2d');
+            if (!tempCtx) return;
 
-            if (!tempContext) return;
+            // Dibuja el video en el canvas temporal
+            tempCtx.drawImage(this.videoElement, 0, 0);
+            const videoImageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
 
-            // Colocar los datos de la máscara en el canvas temporal
-            tempContext.putImageData(mask, 0, 0);
+            // Obtén la imagen del fondo para manipularla
+            const backgroundImageData = ctx.getImageData(0, 0, this.outputCanvas.width, this.outputCanvas.height);
 
-            // Usar el canvas temporal como máscara
-            context.globalCompositeOperation = 'destination-in';
-            context.drawImage(tempCanvas, 0, 0);
+            // Combina la persona segmentada con el fondo
+            for (let i = 0; i < segmentation.data.length; i++) {
+                // Si el pixel pertenece a la persona (1), cópialo del video
+                if (segmentation.data[i] === 1) {
+                    const pixelIndex = i * 4;
+                    backgroundImageData.data[pixelIndex + 0] = videoImageData.data[pixelIndex + 0]; // R
+                    backgroundImageData.data[pixelIndex + 1] = videoImageData.data[pixelIndex + 1]; // G
+                    backgroundImageData.data[pixelIndex + 2] = videoImageData.data[pixelIndex + 2]; // B
+                    backgroundImageData.data[pixelIndex + 3] = videoImageData.data[pixelIndex + 3]; // A
+                }
+            }
 
-            // Dibujar la persona desde el video
-            context.globalCompositeOperation = 'source-over';
-            context.drawImage(this.videoElement, 0, 0);
-
-            // Continuar el bucle de animación
-            this.animationFrame = requestAnimationFrame(() => this.processFrame());
+            // Dibuja el resultado combinado
+            ctx.putImageData(backgroundImageData, 0, 0);
         } catch (error) {
-            console.error('Error al procesar frame:', error);
+            console.error("Error al procesar frame:", error);
+
+            // En caso de error, intentar mostrar al menos el video original
+            try {
+                const ctx = this.outputCanvas.getContext('2d');
+                if (ctx && this.videoElement) {
+                    ctx.drawImage(this.videoElement, 0, 0);
+                }
+            } catch (e) {
+                console.error("Error incluso al intentar mostrar video original:", e);
+            }
         }
+
+        // Continúa el bucle de animación sin importar qué
+        this.animationFrame = requestAnimationFrame(() => this.processFrame());
     }
 
-    /**
-     * Captura una imagen con el fondo cambiado
-     * @returns Datos de la imagen con fondo cambiado codificados en base64 o null si falla
-     */
     public captureImage(): string | null {
-        if (!this.outputCanvas) {
-            console.error('Canvas no inicializado');
-            return null;
-        }
-
         try {
-            return this.outputCanvas.toDataURL('image/jpeg');
-        } catch (error) {
-            console.error('Error al convertir canvas a URL de datos:', error);
+            return this.outputCanvas.toDataURL("image/jpeg");
+        } catch (e) {
+            console.error("Error al convertir canvas a imagen:", e);
             return null;
         }
     }
 
-    /**
-     * Detiene el acceso a la cámara y limpia recursos
-     */
     public stopCamera(): void {
-        // Detener procesamiento en tiempo real
         this.stopRealTimeProcessing();
-
-        // Detener la cámara
         if (this.stream) {
-            const tracks = this.stream.getTracks();
-            tracks.forEach(track => track.stop());
+            this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
         }
-
-        if (this.videoElement) {
-            this.videoElement.srcObject = null;
-        }
+        this.videoElement.srcObject = null;
     }
 }
